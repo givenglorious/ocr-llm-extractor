@@ -16,7 +16,7 @@ def process_loader(folder_path:str) -> list:
     return results
                
                
-if __name__ == "__main__":
+if __name__ == "__main__" :
    hasil =  process_loader('data/')
    print(f"Berhasil ke akses {len(hasil)} ")
   

@@ -20,7 +20,6 @@ def print_food_shop_data(food_shop: FoodShop):
         print(f"  - {item.name}: {item.quantity} x {item.price} = Rp.{item.quantity * item.price:,.2f}",end="\n")
         
 if __name__ == "__main__":
-    # Example usage
     file_path = "data/sbtd2.jpeg",  
     food_shop_data = process_receipt_file(file_path)
     print_food_shop_data(food_shop_data)

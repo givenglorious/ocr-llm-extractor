@@ -1,7 +1,7 @@
 import pymupdf
 import pytesseract
 from  PIL import Image
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
 
 class DataLoader: #Pascal Code
     def __init__(self,path:str):
