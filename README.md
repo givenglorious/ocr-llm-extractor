@@ -1,137 +1,292 @@
-# ocr-llm-extractor
+<p align="center">
+  <img src="https://raw.githubusercontent.com/givenglorious/ocr-llm-extractor/main/assets/banner.png" alt="ocr-llm-extractor" width="100%" />
+</p>
 
-A pipeline that turns receipts (PDF/images) into structured, categorized data using OCR + an LLM, then exports the results to a categorized Excel report.
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2ea44d" alt="License: MIT"></a>
+  <a href="https://github.com/givenglorious/ocr-llm-extractor/releases"><img src="https://img.shields.io/github/v/release/givenglorious/ocr-llm-extractor?label=version&color=1f6feb" alt="Version"></a>
+  <img src="https://img.shields.io/badge/python-3.9%2B-blue" alt="Python 3.9+">
+  <img src="https://img.shields.io/badge/OCR-Tesseract-green" alt="Tesseract OCR">
+  <img src="https://img.shields.io/badge/LLM-Groq-orange" alt="Groq">
+</p>
 
-## Why This Project
+# OCR + LLM Extractor
 
-Receipts and invoices pile up as loose paper or scattered photos, and manually copying their contents into a spreadsheet is slow and error-prone. This project was built to automate that process end-to-end: read a receipt image or PDF, understand its content with an LLM, validate the extracted data against a strict schema, and roll everything up into a categorized Excel report ready for expense tracking or bookkeeping.
+> **Turn receipt photos and PDFs into structured Excel data.**
+>
+> An end-to-end document processing pipeline that combines OCR, LLM structured extraction, schema validation, and batch processing to automatically convert unstructured receipts into categorized data.
 
-It also started as a hands-on way to learn core AI engineering skills that don't require a GPU or model fine-tuning: OCR/text extraction, LLM structured output via tool calling, schema design with Pydantic, and batch data pipelines — skills directly transferable to real-world document-processing systems.
+---
 
-## How It Works
+## What it does
 
+* **Reads receipts and invoices** from PDF, JPG, and PNG files
+* **Extracts text automatically** using native PDF extraction or Tesseract OCR
+* **Uses an LLM** to understand and structure the extracted information
+* **Validates the output** with Pydantic schemas
+* **Processes multiple files** in a single batch
+* **Categorizes extracted items** automatically
+* **Exports structured results** directly to Excel
+* **Continues processing** even when individual files fail
+
+---
+
+## How it works
+
+```text
+Receipt PDF / Image
+        │
+        ▼
+   Text Extraction
+   ├── Native PDF text
+   └── Tesseract OCR
+        │
+        ▼
+     Groq LLM
+        │
+        ▼
+ Structured Output
+        │
+        ▼
+ Pydantic Validation
+        │
+        ▼
+ Batch Processing
+        │
+        ▼
+ Categorized Excel
 ```
-Folder of receipts (PDF/JPG/PNG)
-            |
-            v
-   loader.py      -> extract text (native PDF text, or OCR via
-                      Tesseract for scanned files/images)
-            |
-            v
-   pipeline.py     -> send text to an LLM (Groq), forced via tool
-                       calling to return JSON matching the schema
-            |
-            v
-   schemas.py       -> validate the result into a typed object
-                        (shop info + list of items, each with a category)
-            |
-            v
-   batch.py / batch_main.py  -> repeat for every file in a folder,
-                                 skipping files that fail without
-                                 stopping the whole batch
-            |
-            v
-   excel.py          -> export all extracted items into one Excel
-                         file, split into separate sheets per category
+
+The goal is simple:
+
+**Unstructured document → structured business data**
+
+---
+
+## Example
+
+### Input
+
+```text
+receipt.jpg
+receipt_02.pdf
+receipt_03.png
 ```
 
-## Features
+### Output
 
-- Handles both native PDFs (direct text extraction) and scanned PDFs/images (automatic OCR fallback via Tesseract)
-- Structured, validated output using [Pydantic](https://docs.pydantic.dev/) — the LLM is forced to return data matching an exact schema instead of free-form text
-- Gracefully handles missing fields (e.g. a receipt with no phone number or no timestamp) without crashing
-- Batch-processes an entire folder of receipts in one run, logging which files succeeded or failed
-- Exports results to Excel, automatically split into one sheet per item category
-
-## Project Structure
-
+```text
+result/
+└── hasil_ekstraksi.xlsx
 ```
-.
-├── main.py           # process a single receipt file end-to-end
-├── batch.py          # process every receipt in a folder
-├── batch_main.py      # entry point for running the full batch pipeline
-├── loader.py           # extracts text from PDF/image files
-├── pipeline.py          # sends text to the LLM and returns validated data
-├── schemas.py            # Pydantic schemas (shop info + item, incl. category)
-├── excel.py                # exports results to a categorized Excel file
-├── data/                     # input receipts go here
-├── result/                     # generated Excel output goes here
-└── requirements.txt
+
+The generated Excel file contains structured receipt information and separates items into categories such as:
+
+```text
+Food
+Electronics
+Stationery
+Others
 ```
+
+---
+
+## Tech Stack
+
+| Technology    | Purpose                     |
+| ------------- | --------------------------- |
+| Python        | Core application            |
+| Tesseract OCR | Text extraction from images |
+| PyMuPDF       | Native PDF text extraction  |
+| Groq          | LLM inference               |
+| Pydantic      | Structured data validation  |
+| Pandas        | Data processing             |
+| OpenPyXL      | Excel generation            |
+
+---
 
 ## Installation
 
-### 1. Clone the repo and install dependencies
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/givenglorious/ocr-llm-extractor.git
 cd ocr-llm-extractor
+```
+
+### 2. Install Python dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
-### 2. Install Tesseract OCR (needed to read scanned images/PDFs)
+### 3. Install Tesseract OCR
 
-Download and install from: https://github.com/UB-Mannheim/tesseract/wiki
+Tesseract is required for scanned PDFs and image-based receipts.
 
-After installing, set the path in `loader.py`:
+After installation, configure the executable path in `loader.py`:
 
 ```python
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+pytesseract.pytesseract.tesseract_cmd = (
+    r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+)
 ```
 
-### 3. Set up a Groq API key
+### 4. Configure the Groq API key
 
-Sign up for free at https://console.groq.com to get an API key, then set it as an environment variable:
+Set your API key as an environment variable.
 
-```bash
-# Windows PowerShell
-$env:GROQ_API_KEY="your_key_here"
+**Windows PowerShell:**
+
+```powershell
+$env:GROQ_API_KEY="your_api_key"
 ```
 
-> ⚠️ Never hardcode your API key in the code or commit it to Git.
+> Never hardcode API keys or commit them to Git.
+
+---
 
 ## Usage
 
-**Process a single receipt:**
+### Process a single receipt
+
 ```bash
 python main.py data/receipt.jpg
 ```
 
-**Process a whole folder and export to Excel:**
+### Process an entire folder
+
 ```bash
 python batch_main.py
 ```
-This reads every PDF/image inside `data/`, extracts and validates each one, and writes a categorized report to `result/hasil_ekstraksi.xlsx` — with a separate sheet for each item category (e.g. Food, Electronics, Stationery).
 
-## Data Schema
+The batch pipeline reads supported files from `data/` and generates:
 
-```python
-class FoodItem(BaseModel):
-    name: str
-    price: int
-    quantity: int
-    kategori: str  # e.g. "Makanan", "Elektronik", "Alat Tulis", "Lainnya"
-
-class FoodShop(BaseModel):
-    nama_toko: Optional[str] = None
-    nama_pelanggan: Optional[str] = None
-    deskripsi: Optional[str] = None
-    no_telepon: Optional[str] = None
-    tanggal: date
-    jam: Optional[str] = None
-    biaya_admin: Optional[int] = None
-    daftar_menu: list[FoodItem]
+```text
+result/hasil_ekstraksi.xlsx
 ```
-
-## Tech Stack
-
-- Python
-- [Pydantic](https://docs.pydantic.dev/) — data validation
-- [PyMuPDF](https://pymupdf.readthedocs.io/) — PDF reading
-- [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) via `pytesseract` — image OCR
-- [Groq API](https://groq.com/) — LLM inference for structured extraction
-- [pandas](https://pandas.pydata.org/) + [openpyxl](https://openpyxl.readthedocs.io/) — Excel export
 
 ---
 
-*Status: complete. The pipeline reliably extracts, validates, and exports receipt data end to end, from a single file or a full batch folder.*
+## Project Structure
+
+```text
+ocr-llm-extractor/
+│
+├── data/
+│   └── receipt files
+│
+├── result/
+│   └── generated Excel files
+│
+├── loader.py
+│   └── PDF/image text extraction
+│
+├── pipeline.py
+│   └── LLM extraction pipeline
+│
+├── schemas.py
+│   └── Pydantic data schemas
+│
+├── excel.py
+│   └── Excel export
+│
+├── batch.py
+│   └── Batch processing logic
+│
+├── batch_main.py
+│   └── Batch entry point
+│
+├── main.py
+│   └── Single-file entry point
+│
+├── requirements.txt
+└── README.md
+```
+
+---
+
+## Data Flow
+
+```text
+Input Document
+      │
+      ▼
+┌───────────────┐
+│ Text Extractor│
+└───────┬───────┘
+        │
+        ▼
+┌───────────────┐
+│   Groq LLM    │
+│ Structured    │
+│   Extraction  │
+└───────┬───────┘
+        │
+        ▼
+┌───────────────┐
+│   Pydantic    │
+│   Validation  │
+└───────┬───────┘
+        │
+        ▼
+┌───────────────┐
+│ Categorization│
+└───────┬───────┘
+        │
+        ▼
+┌───────────────┐
+│     Excel     │
+│    Export     │
+└───────────────┘
+```
+
+---
+
+## Why this project?
+
+Manual receipt processing is repetitive and error-prone.
+
+This project explores how modern AI engineering techniques can be combined to build a practical document-processing system:
+
+* OCR for unstructured visual data
+* LLMs for semantic extraction
+* Pydantic for deterministic validation
+* Batch pipelines for scalable processing
+* Excel generation for practical business output
+
+The project focuses on the **engineering pipeline**, not just calling an LLM.
+
+---
+
+## Limitations
+
+* OCR quality depends on image quality
+* LLM extraction may require schema or prompt adjustments for different receipt formats
+* Tesseract must be installed separately
+* The current schema is optimized for receipt-style documents
+
+---
+
+## Roadmap
+
+* [ ] Add confidence scoring for extracted fields
+* [ ] Improve OCR preprocessing
+* [ ] Support more document formats
+* [ ] Add configurable extraction schemas
+* [ ] Add automated tests
+* [ ] Add CLI configuration
+* [ ] Add web interface
+* [ ] Add evaluation dataset and extraction accuracy metrics
+
+---
+
+## License
+
+MIT License — see [LICENSE](LICENSE).
+
+---
+
+<p align="center">
+  Built by <a href="https://github.com/givenglorious">Given Glorious</a>
+</p>
